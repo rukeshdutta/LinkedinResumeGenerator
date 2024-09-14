@@ -1,11 +1,11 @@
+# resume_generator.py
 from anthropic import Anthropic
 from config import ANTHROPIC_API_KEY
 
 client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
-def generate_resume_section(job_description, keywords, section):
-    prompt = f"""
-    Given the following job description and keywords, generate a {section} section for a resume:
+def generate_resume_section(job_description, keywords, section, max_words):
+    prompt = f"""Given the following job description and keywords, generate a {section} section for a resume:
 
     Job Description:
     {job_description}
@@ -14,18 +14,14 @@ def generate_resume_section(job_description, keywords, section):
     {', '.join(keywords)}
 
     Please create a concise and relevant {section} section for a resume tailored to this job description.
-    """
-    
-    response = client.completions.create(
+    The section should be no longer than {max_words} words."""
+
+    response = client.messages.create(
         model="claude-3-sonnet-20240229",
-        prompt=prompt,
-        max_tokens_to_sample=500,
+        max_tokens=max_words * 2,  # A rough estimate, as tokens != words
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
     
-    return response.completion
-
-def generate_resume_sections(job_description, keywords, sections):
-    resume = {}
-    for section in sections:
-        resume[section] = generate_resume_section(job_description, keywords, section)
-    return resume
+    return response.content[0].text
